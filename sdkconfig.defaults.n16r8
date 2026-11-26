@@ -1,7 +1,18 @@
-# ESP32-S3 N16R8：16 MB flash + 8 MB Octal PSRAM（叠加在 sdkconfig.defaults 之上）
-# 用法：idf.py -B build_n16r8 -D SDKCONFIG=build_n16r8/sdkconfig \
-#         -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.n16r8" build
+# ESP32-S3-DevKitC-1 N16R8：完整板级默认（可单独叠在 sdkconfig.defaults 上，不依赖 esp32s3 文件）
+# 与 sdkconfig.defaults.esp32s3 内容对齐；主路径请直接 idf.py set-target esp32s3。
+# 独立构建目录：
+#   idf.py -B build_n16r8 -D SDKCONFIG=build_n16r8/sdkconfig \
+#           -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.n16r8" build
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
-# Flash 沿用 DIO（所有 flash 都支持）；确认支持 QIO 时可改为 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+# Flash 沿用通用配置里的 DIO；确认模组支持 QIO 时可改为 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_OCT=y
 CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=24
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=64
+CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM=32
+CONFIG_ESP_WIFI_CACHE_TX_BUFFER_NUM=64
+CONFIG_ESP_WIFI_RX_BA_WIN=32
+CONFIG_REPEATER_LED_GPIO=48
