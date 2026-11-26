@@ -1,7 +1,8 @@
 # 各芯片通用配置；芯片相关的配置在 sdkconfig.defaults.<芯片>（构建时自动叠加在本文件之后）
-# 未指定目标芯片时默认 ESP32-S3；其他芯片用 -D IDF_TARGET=<芯片> 或 idf.py set-target
+# 未指定目标芯片时默认 ESP32-S3（主目标板：DevKitC-1 N16R8，见 sdkconfig.defaults.esp32s3）
+# 其他芯片用 -D IDF_TARGET=<芯片> 或 idf.py set-target
 CONFIG_IDF_TARGET="esp32s3"
-# DIO：所有 flash 都支持（本板 EON flash 0x1c 在 bootloader 里设不上 QIE 位，QIO 不可用）
+# DIO：所有 flash 都支持（兼容性优先；模组确认支持 QIO 时可改 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y）
 CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
 CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
 

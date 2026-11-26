@@ -54,26 +54,46 @@
 
 ## 硬件
 
-支持 ESP32-S3、ESP32-C3、ESP32-C6，芯片相关配置在 `sdkconfig.defaults.<芯片>`
-（构建时自动叠加在通用的 `sdkconfig.defaults` 之后）：
+**主目标板：ESP32-S3-DevKitC-1 N16R8**（`ESP32-S3-WROOM-1-N16R8`：16 MB flash、8 MB Octal PSRAM；
+板载 WS2812 在 GPIO48，`CONFIG_REPEATER_LED_GPIO`）。芯片相关配置在 `sdkconfig.defaults.<芯片>`
+（构建时自动叠加在通用的 `sdkconfig.defaults` 之后）；N16R8 也可用独立的
+`sdkconfig.defaults.n16r8`（与 `sdkconfig.defaults.esp32s3` 对齐，便于单独构建目录）。
 
-| 芯片 | 默认配置 | 流量记录 |
+| 芯片 / 板型 | 默认配置 | 流量记录 |
 |---|---|---|
-| ESP32-S3 | 8 MB flash（DIO）、2 MB quad PSRAM、240 MHz（开发与测试用的板子） | 默认关闭，可在记录页开启；记录表放 PSRAM |
-| ESP32-S3 N16R8 | 叠加 `sdkconfig.defaults.n16r8`：16 MB flash、8 MB octal PSRAM | 同上 |
+| **ESP32-S3-DevKitC-1 N16R8（主路径）** | 16 MB flash（DIO）、8 MB octal PSRAM、240 MHz、LED GPIO48 | 默认关闭，可在记录页开启；记录表放 PSRAM |
 | ESP32-C3 / C6 | 4 MB flash（DIO）、无 PSRAM、160 MHz、TLS 缓冲按需分配 | 默认关闭，可在记录页开启；记录表放内部 RAM（约 52KB），容量较小（连接 64 条、DNS 记录 128 条） |
 
-C3 / C6 仅在编译层面验证过，尚未上板实测。
+C3 / C6 仅在编译层面验证过，尚未上板实测。其他 S3 模组（例如 8 MB flash + quad PSRAM）请按实际
+改 `sdkconfig.defaults.esp32s3` 中的 Flash 大小与 `CONFIG_SPIRAM_MODE_*`。
+
+DevKitC-1 串口：标「UART」的口走板载 USB-UART（默认控制台 UART0）；标「USB」的口是片内
+USB Serial/JTAG（烧录可用；若要把控制台切到该口，在 menuconfig 里选
+`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG`）。Linux 上常见为 `/dev/ttyUSB*`（UART）或 `/dev/ttyACM*`（USB）。
 
 流量记录关闭时，转发钩子直接放行，DNS 黑名单与记录页黑名单的 DNS 拦截照常生效，
 但不再按连接丢包和断开 TCP 连接。是否开机开启由 `CONFIG_REPEATER_MONITOR_DEFAULT_ON` 决定。
 
-其他板子按实际情况修改对应芯片的 `sdkconfig.defaults.<芯片>` 中的 Flash / PSRAM 配置。
-若 Flash 支持 QIO，可改用 `CONFIG_ESPTOOLPY_FLASHMODE_QIO`。
+若 Flash 支持 QIO，可改用 `CONFIG_ESPTOOLPY_FLASHMODE_QIO`（本仓库默认 DIO，兼容性更好）。
 
 ## 构建与烧录
 
 需要 ESP-IDF v6.1.x。
+
+### 主路径：ESP32-S3-DevKitC-1 N16R8
+
+```bash
+idf.py set-target esp32s3
+idf.py build
+idf.py -p <串口> flash monitor
+```
+
+`<串口>` 示例：Linux `/dev/ttyUSB0` 或 `/dev/ttyACM0`，macOS `/dev/cu.*`，Windows `COMx`。
+只烧录并监视时可合并为：
+
+```bash
+idf.py -p <串口> flash monitor
+```
 
 1. （可选）准备 HTTPS 站点证书。证书不入库，构建时嵌入固件：
 
@@ -87,20 +107,19 @@ C3 / C6 仅在编译层面验证过，尚未上板实测。
    并给出警告。自签证书在浏览器里会提示不受信任；需要 openssl（OpenSSL 或 LibreSSL 均可）。
    烧录后也可以在配置页换成自己的域名和证书。
 
-2. 编译并烧录：
-
-   ```bash
-   idf.py set-target esp32s3
-   idf.py -p <串口> flash monitor
-   ```
-
-   每种芯片用独立的构建目录，互不影响（`build_*/` 已在 `.gitignore` 中）：
+2. 其他芯片用独立构建目录（`build_*/` 已在 `.gitignore` 中）：
 
    ```bash
    idf.py -B build_c3 -D SDKCONFIG=build_c3/sdkconfig -D IDF_TARGET=esp32c3 -p <串口> flash monitor
    idf.py -B build_c6 -D SDKCONFIG=build_c6/sdkconfig -D IDF_TARGET=esp32c6 -p <串口> flash monitor
+   ```
+
+   若要在独立目录显式叠 N16R8 板级默认（与主路径配置相同）：
+
+   ```bash
    idf.py -B build_n16r8 -D SDKCONFIG=build_n16r8/sdkconfig \
-          -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.n16r8" -p <串口> flash monitor
+          -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.defaults.n16r8" \
+          -D IDF_TARGET=esp32s3 -p <串口> flash monitor
    ```
 
    首次构建会通过组件管理器下载 `espressif/nghttp`（版本见 `dependencies.lock`）。
